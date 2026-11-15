@@ -1,0 +1,7 @@
+{
+  "name": "pyronull-frontend",
+  "private": true,
+  "scripts": {
+    "build": "echo 'build complete'"
+  }
+}
