@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyroNull — Combustion Intelligence for Human Spaceflight</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500;1,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="selection:bg-[#5B6B28] selection:text-white">
+
+  <!-- ===================================================================== -->
+  <!-- 3-STAGE WELCOMING SCREEN (CLOSE-UP STRAIGHT MATCHSTICK + INFERNADO)   -->
+  <!-- ===================================================================== -->
+  <div id="welcomeOverlay" role="dialog" aria-label="PyroNull Welcome Experience">
+    <!-- Full-Viewport Three.js Canvas for Close-Up Straight Matchstick & Spreading Infernado Fire -->
+    <canvas id="matchstickCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+    <!-- Minimal top bar inside welcome screen -->
+    <div class="relative z-20 flex items-center justify-between px-8 pt-5">
+      <div class="flex items-center gap-2 text-xs text-[#D7C3A3]/75 tracking-wider uppercase">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+        <span id="welcomeStageIndicator">Stage 1 • Matchstick Ignition</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <button onclick="replayWelcomeSequence()" class="text-xs text-[#E6D5B8]/80 hover:text-white tracking-wider uppercase transition">
+          ↺ Replay
+        </button>
+        <button onclick="triggerStage3CurtainSplit(true)" class="text-xs text-[#F59E0B] hover:text-amber-300 font-semibold tracking-wider uppercase transition">
+          Skip →
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 1 TOP HEADING (Zooms straight past viewer's face) -->
+    <div id="welcomeTitleBlock" class="relative z-10 text-center pt-2 sm:pt-4 px-4 select-none">
+      <p class="text-xs uppercase tracking-[0.28em] text-[#D7B377] mb-2 font-medium">
+        Mission Intelligence for Fire-Safety Research
+      </p>
+      <h1 class="font-editorial text-5xl sm:text-7xl font-bold tracking-tight text-[#FFF8EB] drop-shadow-[0_4px_24px_rgba(255,140,20,0.45)]">
+        PyroNull
+      </h1>
+      <p class="font-editorial italic text-lg sm:text-2xl text-[#E8C89B] mt-1">
+        Combustion Intelligence for Human Spaceflight
+      </p>
+    </div>
+
+    <!-- STAGE 2 SPLIT: Left Half = Close-Up Spreading Matchstick Fire | Right Half = Pure Floating Typography (Zero Boxes) -->
+    <div class="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 items-center px-8 sm:px-16 max-w-7xl w-full mx-auto">
+      <div class="hidden lg:block lg:col-span-5"></div>
+
+      <div id="welcomePointersPanel" class="lg:col-span-7 pointers-hidden max-w-xl ml-auto space-y-6">
+        <blockquote class="font-editorial italic text-3xl sm:text-4xl text-[#FFF5E1] leading-[1.2] tracking-wide">
+          “Where a single terrestrial spark reveals the laws that keep spacecraft crews alive.”
+        </blockquote>
+
+        <!-- Pure floating one-line pointers: NO boxes, NO borders, NO badges -->
+        <div id="welcomePointersList" class="space-y-3.5 pt-2">
+          <p class="pointer-item text-sm sm:text-base text-[#EADBC4] font-normal tracking-wide leading-relaxed">
+            — Bringing combustion and fire-safety research into one mission-focused workspace.
+          </p>
+          <p class="pointer-item text-sm sm:text-base text-[#EADBC4] font-normal tracking-wide leading-relaxed">
+            — Exploring cabin conditions across lunar, Martian, and orbital exploration atmospheres.
+          </p>
+          <p class="pointer-item text-sm sm:text-base text-[#EADBC4] font-normal tracking-wide leading-relaxed">
+            — Benchmarking oxygen thresholds, ventilation flows, and droplet extinction boundaries.
+          </p>
+          <p class="pointer-item text-sm sm:text-base text-[#EADBC4] font-normal tracking-wide leading-relaxed">
+            — Surfacing research on smoke detection and early warning aboard spacecraft.
+          </p>
+          <p class="pointer-item text-sm sm:text-base text-[#EADBC4] font-normal tracking-wide leading-relaxed">
+            — Finding research gaps in the indexed evidence before mission planning.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM COMPACT "GET STARTED" BUTTON -->
+    <div id="welcomeBottomBar" class="relative z-20 pb-8 pt-2 flex flex-col items-center justify-center bottom-hidden">
+      <button
+        id="getStartedBtn"
+        onclick="triggerStage3CurtainSplit(false)"
+        class="px-7 py-2.5 rounded-full bg-[#B8935A] hover:bg-[#CCA972] text-[#1E170C] text-xs sm:text-sm font-bold uppercase tracking-widest transition transform hover:scale-105 shadow-[0_4px_24px_rgba(245,158,11,0.35)]"
+      >
+        Get Started →
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN APPLICATION SHELL (warm olive / tan archive theme, desktop-first)  -->
+  <!-- ===================================================================== -->
+  <div id="appShellWrapper" class="min-h-screen w-full flex flex-col px-4 sm:px-8 py-5 max-w-[1440px] mx-auto">
+
+    <header class="w-full mb-6">
+      <div class="olive-nav-pill px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div class="flex items-center gap-2.5 cursor-pointer" onclick="switchView('overview')">
+          <span class="w-7 h-7 rounded-full bg-[#F5EFC6] text-[#5B6B28] font-extrabold text-xs flex items-center justify-center shadow-sm">PN</span>
+          <span class="text-white font-bold tracking-wider uppercase text-sm">PyroNull</span>
+        </div>
+
+        <nav class="pn-tabs flex flex-wrap items-center justify-center" aria-label="Primary Navigation">
+          <button id="nav-overview" onclick="switchView('overview')" class="nav-tab-btn nav-tab-active" aria-current="page">OVERVIEW</button>
+          <button id="nav-mission" onclick="switchView('mission')" class="nav-tab-btn">WORKSPACE</button>
+          <button id="nav-explorer" onclick="switchView('explorer')" class="nav-tab-btn">INVESTIGATIONS</button>
+          <button id="nav-relevance" onclick="switchView('relevance')" class="nav-tab-btn">RELEVANCE</button>
+          <button id="nav-gaps" onclick="switchView('gaps')" class="nav-tab-btn">GAPS</button>
+          <button id="nav-burntime" onclick="switchView('burntime')" class="nav-tab-btn">BURN TIME</button>
+          <button id="nav-reports" onclick="switchView('reports')" class="nav-tab-btn">REPORTS</button>
+          <button id="nav-datamodel" onclick="switchView('datamodel')" class="nav-tab-btn">DATA &amp; MODEL</button>
+        </nav>
+
+        <div class="flex items-center gap-2">
+          <span id="pnApiPill" class="pn-api-pill" role="status" title="Backend not connected" aria-label="Backend not connected" data-state="off">API: OFF</span>
+          <button onclick="openWelcomeFromDashboard()" class="px-3 py-1 rounded-full bg-[#47541E] hover:bg-[#384316] text-[#F5EFC6] text-[11px] font-semibold tracking-wider uppercase transition whitespace-nowrap">
+            Replay 3D Fire
+          </button>
+          <button onclick="openInfoModal('about')" class="px-3 py-1 rounded-full bg-[#F5EFC6]/15 hover:bg-[#F5EFC6]/25 text-[#F5EFC6] text-[11px] font-semibold tracking-wider uppercase transition">
+            ABOUT
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 space-y-6">
+
+      <!-- ================= OVERVIEW ================= -->
+      <section id="view-overview" class="space-y-6">
+
+        <div id="seq-block-hero" class="home-seq-block relative rounded-3xl p-6 sm:p-10 overflow-hidden flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+          <svg class="w-72 h-72 sm:w-96 sm:h-96 absolute -left-6 -top-8 pointer-events-none opacity-85" viewBox="0 0 400 400" fill="none">
+            <path d="M108.5 44.2C155.3 18.5 224.2 14.8 265.4 48.6C306.6 82.4 316.2 148.5 296.8 198.4C277.4 248.3 228.9 282.1 174.5 304.8C120.1 327.5 59.8 339.1 29.3 305.4C-1.2 271.7 8.1 192.7 31.8 134.1C55.5 75.5 61.7 69.9 108.5 44.2Z" fill="#BCC276"/>
+          </svg>
+          <div class="relative z-10 max-w-2xl">
+            <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#231D12] uppercase leading-[1.08]">
+              EXPLORE COMBUSTION.<br/>
+              THE ARTEMIS FIRE ARCHIVE.
+            </h1>
+            <p class="text-sm sm:text-base text-[#3D321E] mt-4 leading-relaxed max-w-xl font-medium">
+              PyroNull helps you define a mission scenario, discover indexed combustion and fire-safety investigations, check research relevance, and find evidence gaps for human space-exploration environments.
+            </p>
+          </div>
+          <div class="relative z-10 flex flex-col gap-3.5 w-full sm:w-64 shrink-0">
+            <button onclick="switchView('mission')" class="btn-pill-action w-full py-3.5 px-6 text-sm tracking-wide text-center">Start mission analysis</button>
+            <button onclick="switchView('explorer')" class="btn-pill-action w-full py-3.5 px-6 text-sm tracking-wide text-center">Browse investigations</button>
+          </div>
+        </div>
+
+        <div id="seq-block-mission" class="home-seq-block pn-grid-3">
+          <button type="button" data-pn-card onclick="switchView('mission')" class="card-tan pn-flow-card p-5" style="color:#1E170C">
+            <span>
+              <span class="pn-step">Step 1</span>
+              <h2 class="text-base font-extrabold uppercase tracking-tight leading-snug mt-1" style="color:#1E170C">Mission Workspace</h2>
+              <p class="text-xs leading-relaxed mt-1.5" style="color:#2B2214">Choose a mission profile and enter the cabin conditions: gravity, oxygen, pressure, airflow and fuel or material.</p>
+            </span>
+            <span class="text-[11px] font-bold uppercase tracking-wider underline text-right" style="color:#1E170C">OPEN →</span>
+          </button>
+          <button type="button" data-pn-card onclick="switchView('explorer')" class="card-brown pn-flow-card p-5" style="color:#FAF3E0">
+            <span>
+              <span class="pn-step">Step 2</span>
+              <h2 class="text-base font-extrabold uppercase tracking-tight leading-snug mt-1" style="color:#FAF3E0">Investigations</h2>
+              <p class="text-xs leading-relaxed mt-1.5" style="color:#EEDFCA">Discover indexed investigations that match the active scenario, with source links and provenance when provided.</p>
+            </span>
+            <span class="text-[11px] font-bold uppercase tracking-wider underline text-right" style="color:#FAF3E0">OPEN →</span>
+          </button>
+          <button type="button" data-pn-card onclick="switchView('relevance')" class="card-tan pn-flow-card p-5" style="color:#1E170C">
+            <span>
+              <span class="pn-step">Step 3</span>
+              <h2 class="text-base font-extrabold uppercase tracking-tight leading-snug mt-1" style="color:#1E170C">Relevance Analysis</h2>
+              <p class="text-xs leading-relaxed mt-1.5" style="color:#2B2214">See how closely each indexed investigation matches the scenario. This is research relevance only.</p>
+            </span>
+            <span class="text-[11px] font-bold uppercase tracking-wider underline text-right" style="color:#1E170C">OPEN →</span>
+          </button>
+          <button type="button" data-pn-card onclick="switchView('gaps')" class="card-brown pn-flow-card p-5" style="color:#FAF3E0">
+            <span>
+              <span class="pn-step">Step 4</span>
+              <h2 class="text-base font-extrabold uppercase tracking-tight leading-snug mt-1" style="color:#FAF3E0">Research Gaps</h2>
+              <p class="text-xs leading-relaxed mt-1.5" style="color:#EEDFCA">Find conditions the currently indexed dataset does not cover.</p>
+            </span>
+            <span class="text-[11px] font-bold uppercase tracking-wider underline text-right" style="color:#FAF3E0">OPEN →</span>
+          </button>
+          <button type="button" data-pn-card onclick="switchView('reports')" class="card-tan pn-flow-card p-5" style="color:#1E170C">
+            <span>
+              <span class="pn-step">Step 5</span>
+              <h2 class="text-base font-extrabold uppercase tracking-tight leading-snug mt-1" style="color:#1E170C">Mission Reports</h2>
+              <p class="text-xs leading-relaxed mt-1.5" style="color:#2B2214">Assemble the returned evidence, limitations and gaps into one report.</p>
+            </span>
+            <span class="text-[11px] font-bold uppercase tracking-wider underline text-right" style="color:#1E170C">OPEN →</span>
+          </button>
+          <button type="button" data-pn-card onclick="switchView('burntime')" class="card-brown pn-flow-card p-5" style="color:#FAF3E0">
+            <span>
+              <span class="pn-step">Separate tool</span>
+              <h2 class="text-base font-extrabold uppercase tracking-tight leading-snug mt-1" style="color:#FAF3E0">Burn Time Estimator</h2>
+              <p class="text-xs leading-relaxed mt-1.5" style="color:#EEDFCA">Experimental PSI-159 regression model, separate from mission relevance. Not a safety decision.</p>
+            </span>
+            <span class="text-[11px] font-bold uppercase tracking-wider underline text-right" style="color:#FAF3E0">OPEN →</span>
+          </button>
+        </div>
+
+        <div id="seq-block-kpis" class="home-seq-block card-tan p-5 sm:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div class="flex flex-col sm:flex-row items-start gap-5 max-w-3xl min-w-0">
+            <img src="assets/flame_chamber.jpg" alt="Illustrative combustion chamber image" class="w-24 h-24 rounded-2xl object-cover border-2 border-[#3D311E]/40 shrink-0" />
+            <div class="min-w-0">
+              <h2 class="text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-[#1E170C]">Mission intelligence workflow</h2>
+              <p class="text-xs sm:text-sm text-[#2B2214] mt-1.5 leading-relaxed">
+                Scenario → Discover → Relevance → Gaps → Report. Your scenario stays available across these pages for the current browser session, so you only enter it once.
+              </p>
+            </div>
+          </div>
+          <div class="flex flex-col items-stretch gap-2.5 w-full lg:w-56 shrink-0">
+            <button onclick="switchView('mission')" class="btn-pill-action w-full py-2.5 px-5 text-xs sm:text-sm text-center">Start mission analysis</button>
+          </div>
+        </div>
+
+        <div id="seq-block-domains" class="home-seq-block pn-grid-2e">
+          <div class="card-parchment p-5">
+            <h3 class="pn-h2">Connection status</h3>
+            <p class="pn-p"><span id="pnApiStatus" class="status-badge">API: NOT CONNECTED</span></p>
+            <p class="pn-p" style="margin-top:.6rem">This build contains the interface only. Results appear when the backend is connected; no placeholder research data is shown. “API reachable” never means the data is NASA-verified.</p>
+          </div>
+          <div class="card-parchment p-5">
+            <h3 class="pn-h2">Read this first</h3>
+            <div class="pn-notice"><strong>Research relevance is not a fire-risk or safety certification.</strong> Gaps describe the currently indexed dataset only, and the burn-time model is an experimental estimate.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= MISSION WORKSPACE ================= -->
+      <section id="view-mission" class="hidden space-y-5">
+        <div class="card-tan p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="min-w-0">
+            <span class="status-badge">STEP 1 • MISSION WORKSPACE</span>
+            <h1 class="text-2xl font-extrabold uppercase text-[#1E170C] mt-1.5">Mission Workspace</h1>
+            <p class="text-xs text-[#2B2214] mt-1">Choose a mission profile and configure the scenario used by every other page.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0"><button onclick="switchView('overview')" class="btn-pill-action px-4 py-2 text-xs">← Overview</button></div>
+        </div>
+        <div class="pn-grid-2">
+          <div class="card-parchment p-5">
+            <form id="missionFormEl" novalidate>
+              <div id="missionForm"></div>
+              <div class="pn-actions" style="margin-top:.25rem">
+                <button type="submit" id="missionSubmit" class="btn-pill-action px-6 py-2.5 text-xs">Submit scenario</button>
+                <button type="button" id="missionReset" class="pn-btn-secondary px-5 py-2.5 text-xs">Reset form</button>
+              </div>
+              <p class="pn-hint" style="margin-top:.6rem">* required. Numeric values must be finite numbers; the backend remains the final validator.</p>
+            </form>
+          </div>
+          <aside class="card-parchment p-5 pn-sticky" aria-label="Scenario summary">
+            <h2 class="pn-h2">Scenario summary</h2>
+            <div id="scenarioSummary"></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ================= INVESTIGATIONS ================= -->
+      <section id="view-explorer" class="hidden space-y-4">
+        <div class="card-tan p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="min-w-0">
+            <span class="status-badge">STEP 2 • INVESTIGATIONS</span>
+            <h1 class="text-2xl font-extrabold uppercase text-[#1E170C] mt-1.5">Investigations</h1>
+            <p class="text-xs text-[#2B2214] mt-1">Research catalogue view of indexed investigations that match the active scenario. Not a general NASA search engine.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0"><button onclick="switchView('overview')" class="btn-pill-action px-4 py-2 text-xs">← Overview</button></div>
+        </div>
+        <div class="pn-scenario-strip" data-pn-strip aria-label="Active scenario"></div>
+        <div class="card-parchment p-5 space-y-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <button type="button" data-pn-action="discover" class="btn-pill-action px-6 py-2.5 text-xs">Discover investigations</button>
+            <span class="pn-hint">Uses the active scenario. Shows only records returned for the indexed dataset.</span>
+          </div>
+          <div id="pn-result-discover" aria-live="polite"></div>
+          <div class="pn-table-wrap">
+            <table class="archive-table text-left text-xs sm:text-sm">
+              <thead><tr><th scope="col">Title</th><th scope="col">Objective</th><th scope="col">Platform</th><th scope="col">Conditions</th><th scope="col">Source</th><th scope="col">Provenance</th></tr></thead>
+              <tbody id="investigationsBody"><tr><td colspan="6" class="pn-table-empty">No discovery run yet. Select “Discover investigations” to list records for the active scenario.</td></tr></tbody>
+            </table>
+          </div>
+          <p class="pn-hint">Source links appear only when the backend returns them. Provenance (verified, partially verified, unverified, invalid, demo) appears only when provided and is never inferred.</p>
+        </div>
+      </section>
+
+      <!-- ================= RELEVANCE ================= -->
+      <section id="view-relevance" class="hidden space-y-4">
+        <div class="card-tan p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="min-w-0">
+            <span class="status-badge">STEP 3 • RELEVANCE ANALYSIS</span>
+            <h1 class="text-2xl font-extrabold uppercase text-[#1E170C] mt-1.5">Relevance Analysis</h1>
+            <p class="text-xs text-[#2B2214] mt-1">Explains how indexed investigations relate to the selected mission scenario.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0"><button onclick="switchView('overview')" class="btn-pill-action px-4 py-2 text-xs">← Overview</button></div>
+        </div>
+        <div class="pn-scenario-strip" data-pn-strip aria-label="Active scenario"></div>
+        <div class="pn-grid-2">
+          <div class="card-parchment p-5 space-y-4">
+            <div class="flex flex-wrap items-center gap-3">
+              <button type="button" data-pn-action="rank" class="btn-pill-action px-6 py-2.5 text-xs">Run relevance analysis</button>
+              <span class="pn-hint">Shows the returned research relevance (scenario match) and its explanation.</span>
+            </div>
+            <div id="pn-result-rank" aria-live="polite"></div>
+          </div>
+          <aside class="card-parchment p-5 pn-sticky" aria-label="Limitations">
+            <h2 class="pn-h2">Limitations</h2>
+            <div class="pn-notice"><strong>Research relevance only.</strong> This is not a fire risk, safety score or probability of fire. It reflects how closely indexed records match the scenario, and is limited to the currently indexed dataset.</div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ================= RESEARCH GAPS ================= -->
+      <section id="view-gaps" class="hidden space-y-4">
+        <div class="card-tan p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="min-w-0">
+            <span class="status-badge">STEP 4 • RESEARCH GAPS</span>
+            <h1 class="text-2xl font-extrabold uppercase text-[#1E170C] mt-1.5">Research Gaps</h1>
+            <p class="text-xs text-[#2B2214] mt-1">Missing evidence or weak coverage in the currently indexed records.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0"><button onclick="switchView('overview')" class="btn-pill-action px-4 py-2 text-xs">← Overview</button></div>
+        </div>
+        <div class="pn-scenario-strip" data-pn-strip aria-label="Active scenario"></div>
+        <div class="card-parchment p-5 space-y-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <button type="button" data-pn-action="gaps" class="btn-pill-action px-6 py-2.5 text-xs">Identify gaps</button>
+          </div>
+          <div class="pn-notice">A gap means the currently indexed dataset lacks matching evidence. It does not prove the wider scientific literature lacks research.</div>
+          <div id="pn-result-gaps" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- ================= BURN TIME ================= -->
+      <section id="view-burntime" class="hidden space-y-4">
+        <div class="card-tan p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="min-w-0">
+            <span class="status-badge">SEPARATE TOOL • EXPERIMENTAL</span>
+            <h1 class="text-2xl font-extrabold uppercase text-[#1E170C] mt-1.5">Burn Time Estimator</h1>
+            <p class="text-xs text-[#2B2214] mt-1">Experimental PSI-159 burn-time regression model. Separate from Mission Intelligence relevance.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0"><button onclick="switchView('overview')" class="btn-pill-action px-4 py-2 text-xs">← Overview</button></div>
+        </div>
+        <div class="pn-grid-2">
+          <div class="card-parchment p-5">
+            <form id="burnFormEl" novalidate>
+              <div id="burnForm"></div>
+              <div class="pn-actions" style="margin-top:.25rem">
+                <button type="submit" id="burnSubmit" class="btn-pill-action px-6 py-2.5 text-xs">Estimate burn time</button>
+                <button type="button" id="burnSample" class="pn-btn-secondary px-5 py-2.5 text-xs">Load README sample inputs</button>
+                <button type="button" id="burnReset" class="pn-btn-secondary px-5 py-2.5 text-xs">Clear</button>
+              </div>
+            </form>
+          </div>
+          <div class="space-y-4 pn-sticky">
+            <div class="card-parchment p-5">
+              <h2 class="pn-h2">Estimate</h2>
+              <div id="pn-result-burnTime" aria-live="polite"></div>
+            </div>
+            <div class="card-parchment p-5">
+              <h2 class="pn-h2">Model evaluation metrics</h2>
+              <div class="pn-metrics">
+            <div class="pn-metric"><b>≈ 23.08 s</b><span>MAE</span></div>
+            <div class="pn-metric"><b>≈ 36.14 s</b><span>RMSE</span></div>
+            <div class="pn-metric"><b>≈ 0.1575</b><span>R²</span></div>
+              </div>
+              <p class="pn-hint" style="margin-top:.6rem">Recorded in the model README. Evaluation metrics, not a guarantee of individual prediction accuracy; the results are modest.</p>
+            </div>
+            <div class="pn-notice" role="note"><strong>Experimental estimate only.</strong> The model has limited demonstrated predictive performance and may not generalize beyond its training data. It is not a fire-risk score, ignition probability, suppression-time estimate, or habitat safety assessment. Do not use it for operational safety decisions.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= REPORTS ================= -->
+      <section id="view-reports" class="hidden space-y-4">
+        <div class="card-tan p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="min-w-0">
+            <span class="status-badge">STEP 5 • MISSION REPORTS</span>
+            <h1 class="text-2xl font-extrabold uppercase text-[#1E170C] mt-1.5">Mission Reports</h1>
+            <p class="text-xs text-[#2B2214] mt-1">Assemble the returned evidence, limitations and gaps into one report.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0"><button onclick="switchView('overview')" class="btn-pill-action px-4 py-2 text-xs">← Overview</button></div>
+        </div>
+        <div class="pn-scenario-strip" data-pn-strip aria-label="Active scenario"></div>
+        <div class="card-parchment p-5 space-y-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <button type="button" data-pn-action="report" class="btn-pill-action px-6 py-2.5 text-xs">Generate mission report</button>
+            <span class="pn-hint">Sections appear only if the backend returns them.</span>
+          </div>
+          <div id="pn-result-report" aria-live="polite"></div>
+          <div class="pn-grid-3"><div class="pn-section-card"><h3>Mission scenario</h3><p>Not generated yet.</p></div><div class="pn-section-card"><h3>Investigations</h3><p>Not generated yet.</p></div><div class="pn-section-card"><h3>Ranking</h3><p>Not generated yet.</p></div><div class="pn-section-card"><h3>Evidence</h3><p>Not generated yet.</p></div><div class="pn-section-card"><h3>Limitations</h3><p>Not generated yet.</p></div><div class="pn-section-card"><h3>Research gaps</h3><p>Not generated yet.</p></div></div>
+        </div>
+      </section>
+
+      <!-- ================= DATA & MODEL INFO ================= -->
+      <section id="view-datamodel" class="hidden space-y-4">
+        <div class="card-tan p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="min-w-0">
+            <span class="status-badge">METHODOLOGY</span>
+            <h1 class="text-2xl font-extrabold uppercase text-[#1E170C] mt-1.5">Data &amp; Model Info</h1>
+            <p class="text-xs text-[#2B2214] mt-1">Dataset provenance, the PSI-159 model, and the limits of both.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0"><button onclick="switchView('overview')" class="btn-pill-action px-4 py-2 text-xs">← Overview</button></div>
+        </div>
+        <div class="pn-grid-2e">
+          <div class="card-parchment p-5 space-y-3">
+            <h2 class="pn-h2">Dataset provenance</h2>
+            <div class="pn-notice"><strong>DEMO DATA — NOT VERIFIED NASA RESEARCH.</strong> The project notes mark the current CSV fixtures as demo data. They have not been independently confirmed against original NASA PSI records.</div>
+            <p class="pn-p">Source links to NASA PSI / NASA NTRS are shown only when the original source URL is known and verified.</p>
+            <h3 class="pn-h2" style="margin-top:.5rem">Provenance labels</h3>
+            <p class="pn-p">Shown only when the backend supplies a status; the interface never infers one.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:.4rem"><span class="pn-prov">VERIFIED</span> <span class="pn-prov">PARTIALLY VERIFIED</span> <span class="pn-prov">UNVERIFIED</span> <span class="pn-prov">INVALID</span> <span class="pn-prov">DEMO</span></div>
+          </div>
+          <div class="card-parchment p-5 space-y-3">
+            <h2 class="pn-h2">What this interface does not claim</h2>
+            <ul class="pn-list">
+              <li>Research relevance is not fire risk, ignition probability or habitat safety.</li>
+              <li>The burn-time estimate is not a suppression time, a fire-duration guarantee or an operational safety prediction.</li>
+              <li>An empty result means nothing matched the indexed dataset, not that no research exists.</li>
+              <li>A gap describes the indexed dataset, not the wider literature.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card-parchment p-5 space-y-3">
+          <h2 class="pn-h2">PSI-159 burn-time model</h2>
+          <p class="pn-p">Input: eight features, in this order. Output: predicted burn time in seconds. Recorded README metrics: MAE ≈ 23.08 s, RMSE ≈ 36.14 s, R² ≈ 0.1575.</p>
+          <div class="pn-table-wrap">
+            <table class="archive-table text-left text-xs sm:text-sm" style="min-width:520px">
+              <thead><tr><th scope="col">#</th><th scope="col">Feature</th><th scope="col">Unit / meaning</th><th scope="col">README sample</th></tr></thead>
+              <tbody><tr><td>1</td><td>Flame Type</td><td>Categorical</td><td>Normal</td></tr><tr><td>2</td><td>Fuel</td><td>Categorical</td><td>30% ethane</td></tr><tr><td>3</td><td>approx p</td><td>bar</td><td>0.506650</td></tr><tr><td>4</td><td>Tad</td><td>K (adiabatic flame temperature)</td><td>2483.47</td></tr><tr><td>5</td><td>HC burnrate</td><td>mg/s</td><td>0.75</td></tr><tr><td>6</td><td>O2 flow rate</td><td>mg/s</td><td>0.85</td></tr><tr><td>7</td><td>XO2</td><td>Oxygen mole fraction</td><td>0.15</td></tr><tr><td>8</td><td>Xf</td><td>Fuel fraction</td><td>0.300</td></tr></tbody>
+            </table>
+          </div>
+          <div class="pn-notice"><strong>Limitations.</strong> The model has limited demonstrated predictive performance and may not generalize beyond its training data or to spacecraft, lunar or Mars habitats without validation. Do not use it for operational safety decisions.</div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL FOR INVESTIGATION DETAILS & DOCUMENTATION -->
+  <div id="appModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="if(event.target===this)closeModal()" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="card-parchment max-w-2xl w-full max-h-[88vh] overflow-y-auto p-6 border-2 border-[#4A3B24] shadow-2xl">
+      <div class="flex items-start justify-between gap-4 pb-3 border-b border-[#4A3B24]/40">
+        <div>
+          <span id="modalBadge" class="status-badge"></span>
+          <h3 id="modalTitle" class="text-lg font-extrabold text-[#1E170C] mt-1.5"></h3>
+        </div>
+        <button id="modalCloseBtn" aria-label="Close dialog" onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#B8935A] hover:bg-[#6C3C0E] text-white font-bold flex items-center justify-center">✕</button>
+      </div>
+      <div id="modalContent" class="pn-modal-body mt-4 space-y-3 text-xs text-[#2B2214] leading-relaxed"></div>
+    </div>
+  </div>
+
+  <script src="ui.js"></script>
+  <script src="api.js"></script>
+  <script src="pages.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
